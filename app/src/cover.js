@@ -12,6 +12,7 @@ export const GRADES = {
   noir: { label: 'Teal Noir', sat: 0.85, con: 1.12, wash: 'rgba(0,180,180,0.10)', top: 'rgba(0,60,80,0.14)', bottom: 'rgba(0,0,0,0.30)' },
   candy: { label: 'Candy Pop', sat: 1.50, con: 1.04, wash: 'rgba(255,0,110,0.12)', top: 'rgba(255,120,200,0.14)', bottom: 'rgba(90,0,160,0.20)' },
   miami: { label: 'Miami Pink', sat: 1.45, con: 1.07, wash: 'rgba(255,0,180,0.12)', top: 'rgba(255,80,200,0.16)', bottom: 'rgba(0,180,220,0.24)' },
+  midnight: { label: 'Midnight Indigo', sat: 0.95, con: 1.10, wash: 'rgba(90,40,200,0.10)', top: 'rgba(120,80,255,0.14)', bottom: 'rgba(8,0,40,0.30)' },
 };
 
 export const LAYOUTS = {
@@ -19,6 +20,7 @@ export const LAYOUTS = {
   hero: { label: 'Hero + Two', panels: 3 },
   strips: { label: 'Tilted Strips', panels: 3 },
   quad: { label: 'Four Square', panels: 4 },
+  center: { label: 'Center Stage', panels: 3 },
   full: { label: 'Full Bleed', panels: 1 },
 };
 
@@ -34,6 +36,10 @@ const PANEL_CELLS = {
   quad: [
     [0, 0, 0.5, 0.5], [0.5, 0, 0.5, 0.5],
     [0, 0.5, 0.5, 0.5], [0.5, 0.5, 0.5, 0.5],
+  ],
+  center: [
+    [0, 0, 1, 0.62],
+    [0, 0.62, 0.5, 0.38], [0.5, 0.62, 0.5, 0.38],
   ],
   full: [[0, 0, 1, 1]],
 };
@@ -88,8 +94,9 @@ function grainPattern(ctx) {
 }
 
 /** Draws one photo panel: cover-fit with the crop state's zoom/pan/flip, then the grade.
- *  `panel` is the geometry from layoutPanels; `crop` is the per-panel crop state. */
-export function drawPhotoPanel(ctx, panel, photo, grade, crop) {
+ *  `panel` is the geometry from layoutPanels; `crop` is the per-panel crop state.
+ *  `raw` skips the grade entirely (the compare view): the photo as it was taken. */
+export function drawPhotoPanel(ctx, panel, photo, grade, crop, raw = false) {
   const { x, y, w, h } = panel;
   const zoom = crop?.zoom ?? 1;
   const oxF = crop?.ox ?? 0.5;
@@ -113,7 +120,7 @@ export function drawPhotoPanel(ctx, panel, photo, grade, crop) {
     const ih = photo.naturalHeight * base * zoom;
     const dx = ox + (w - iw) * (1 - oxF);
     const dy = oy + (h - ih) * (1 - oyF);
-    ctx.filter = `saturate(${grade.sat}) contrast(${grade.con})`;
+    if (!raw) ctx.filter = `saturate(${grade.sat}) contrast(${grade.con})`;
     if (flip) {
       ctx.translate(ox + w / 2, 0);
       ctx.scale(-1, 1);
@@ -135,13 +142,15 @@ export function drawPhotoPanel(ctx, panel, photo, grade, crop) {
     ctx.fillText('+ PHOTO', ox + w / 2, oy + h / 2);
   }
   ctx.globalCompositeOperation = 'overlay';
-  ctx.fillStyle = grade.wash;
-  ctx.fillRect(ox, oy, w, h);
-  const wash = ctx.createLinearGradient(ox, oy, ox, oy + h);
-  wash.addColorStop(0, grade.top);
-  wash.addColorStop(1, grade.bottom);
-  ctx.fillStyle = wash;
-  ctx.fillRect(ox, oy, w, h);
+  if (!raw) {
+    ctx.fillStyle = grade.wash;
+    ctx.fillRect(ox, oy, w, h);
+    const wash = ctx.createLinearGradient(ox, oy, ox, oy + h);
+    wash.addColorStop(0, grade.top);
+    wash.addColorStop(1, grade.bottom);
+    ctx.fillStyle = wash;
+    ctx.fillRect(ox, oy, w, h);
+  }
   ctx.globalCompositeOperation = 'source-over';
   ctx.restore();
 }
@@ -325,7 +334,7 @@ export function drawCover(ctx, W, H, state) {
   panels.forEach((panel, i) => {
     const pstate = state.panels[i] ?? freshPanel(i % Math.max(1, state.photos.length));
     const photo = pstate.photo >= 0 ? state.photos[pstate.photo] ?? null : null;
-    drawPhotoPanel(ctx, panel, photo, grade, pstate);
+    drawPhotoPanel(ctx, panel, photo, grade, pstate, state.compare === true);
   });
 
   if (band) {

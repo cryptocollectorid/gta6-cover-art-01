@@ -37,6 +37,7 @@ button:hover { background: #4a2d66; filter: brightness(1.1); }
 button.primary { background: #ff2e88; flex: 1; }
 button.primary:hover { background: #ff4d9c; }
 button.mini { padding: 6px 9px; font-size: 13px; white-space: nowrap; }
+button.mini.held { background: #ffd319; color: #1a0b2e; }
 #status { margin: 10px 0 0; font-size: 13px; color: #7df9ff; min-height: 1.4em; }
 
 /* Keyboard users get a visible ring everywhere the mouse gets a hover. */

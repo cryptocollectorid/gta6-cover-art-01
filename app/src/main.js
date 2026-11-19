@@ -11,6 +11,16 @@ const SIZES = {
   '1920x1080': { label: 'Wide 1920 × 1080', w: 1920, h: 1080 },
 };
 
+/** Genre caption ideas, one tap away when the words won't come. */
+const PRESETS = [
+  { title: 'Neon Shore', subtitle: 'a night in the city' },
+  { title: 'Vice City Nights', subtitle: 'welcome to the 305' },
+  { title: 'Sunset Heist', subtitle: 'golden hour, every hour' },
+  { title: 'Midnight at the Pier', subtitle: 'salt air and neon lights' },
+  { title: 'Ocean Drive', subtitle: 'after dark' },
+  { title: 'Palm Tree Hustle', subtitle: 'chasing the last light' },
+];
+
 const canvas = document.getElementById('cover');
 const status = document.getElementById('status');
 const titleInput = document.getElementById('caption');
@@ -22,6 +32,7 @@ const state = {
   title: 'Neon Shore',
   subtitle: 'a night in the city',
   size: '1080x1080',
+  compare: false,
   photos: [null, null, null],
   photoNames: ['—', '—', '—'],
   panels: [freshPanel(0), freshPanel(1), freshPanel(0), freshPanel(1), freshPanel(0), freshPanel(1)],
@@ -159,9 +170,20 @@ for (const [key, def] of Object.entries(GRADES)) {
 }
 gradeRow.querySelector('[data-grade="vice"]').classList.add('active');
 
-// Title, subtitle, size.
+// Title, subtitle, size — plus a caption idea on tap.
 titleInput.addEventListener('input', () => { state.title = titleInput.value; redraw(); });
 subtitleInput.addEventListener('input', () => { state.subtitle = subtitleInput.value; redraw(); });
+let presetIndex = 0;
+document.getElementById('surprise').addEventListener('click', () => {
+  const preset = PRESETS[presetIndex % PRESETS.length];
+  presetIndex += 1;
+  state.title = preset.title;
+  state.subtitle = preset.subtitle;
+  titleInput.value = preset.title;
+  subtitleInput.value = preset.subtitle;
+  redraw();
+  say(`Caption idea: “${preset.title}” — ${preset.subtitle}.`);
+});
 document.getElementById('sizes').addEventListener('change', (e) => {
   state.size = e.target.value;
   redraw();
@@ -192,6 +214,17 @@ document.getElementById('fill-all').addEventListener('click', () => {
   redraw();
   say(`All panels now use photo ${p.photo + 1}.`);
 });
+// Hold to compare: while held, the panels show the photos ungraded.
+const compareBtn = document.getElementById('compare');
+function setCompare(on) {
+  state.compare = on;
+  compareBtn.classList.toggle('held', on);
+  redraw();
+  say(on ? 'Showing the photos ungraded — release to bring the grade back.' : 'Grade back on.');
+}
+compareBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); setCompare(true); });
+compareBtn.addEventListener('pointerup', () => setCompare(false));
+compareBtn.addEventListener('pointerleave', () => { if (state.compare) setCompare(false); });
 function zoomSelected(factor) {
   const p = state.panels[selectedPanel];
   p.zoom = Math.min(4, Math.max(1, p.zoom * factor));
