@@ -44,7 +44,8 @@ function redraw() {
   drawSelection(ctx);
 }
 
-/** The dashed outline of the selected panel, drawn over the preview. */
+/** The dashed outline of the selected panel, drawn over the preview.
+ *  Tilted panels get a tilted outline, matching the panel's rotation. */
 function drawSelection(ctx) {
   if (document.body.classList.contains('shot-cover')) return;
   const { panels } = layoutPanels(state.layout, canvas.width, canvas.height);
@@ -54,7 +55,13 @@ function drawSelection(ctx) {
   ctx.setLineDash([10, 8]);
   ctx.lineWidth = 3;
   ctx.strokeStyle = '#ffd319';
-  ctx.strokeRect(p.x + 2, p.y + 2, p.w - 4, p.h - 4);
+  if (p.rot) {
+    ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
+    ctx.rotate((p.rot * Math.PI) / 180);
+    ctx.strokeRect(-p.w / 2 + 2, -p.h / 2 + 2, p.w - 4, p.h - 4);
+  } else {
+    ctx.strokeRect(p.x + 2, p.y + 2, p.w - 4, p.h - 4);
+  }
   ctx.restore();
 }
 
@@ -160,13 +167,24 @@ document.getElementById('sizes').addEventListener('change', (e) => {
   redraw();
 });
 
-// Panel tools: zoom, flip, fill-all.
+// Panel tools: zoom, flip, fill-all, reset crop.
 document.getElementById('zoom-in').addEventListener('click', () => zoomSelected(1.25));
 document.getElementById('zoom-out').addEventListener('click', () => zoomSelected(0.8));
 document.getElementById('flip').addEventListener('click', () => {
   const p = state.panels[selectedPanel];
   p.flip = !p.flip;
   redraw();
+});
+document.getElementById('reset-crop').addEventListener('click', () => {
+  const p = state.panels[selectedPanel];
+  const img = state.photos[p.photo];
+  const { panels } = layoutPanels(state.layout, canvas.width, canvas.height);
+  const geo = panels[selectedPanel];
+  p.zoom = 1; p.ox = 0.5; p.flip = false;
+  // Re-aim a portrait photo at the face when the panel is wider than tall.
+  p.oy = img && geo && img.naturalHeight > img.naturalWidth && geo.w > geo.h ? 0.85 : 0.5;
+  redraw();
+  say(`Panel ${selectedPanel + 1} crop reset.`);
 });
 document.getElementById('fill-all').addEventListener('click', () => {
   const p = state.panels[selectedPanel];

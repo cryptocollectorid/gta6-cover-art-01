@@ -11,12 +11,14 @@ export const GRADES = {
   gold: { label: 'Golden Hour', sat: 1.20, con: 1.05, wash: 'rgba(255,180,60,0.12)', top: 'rgba(255,200,90,0.10)', bottom: 'rgba(160,60,10,0.18)' },
   noir: { label: 'Teal Noir', sat: 0.85, con: 1.12, wash: 'rgba(0,180,180,0.10)', top: 'rgba(0,60,80,0.14)', bottom: 'rgba(0,0,0,0.30)' },
   candy: { label: 'Candy Pop', sat: 1.50, con: 1.04, wash: 'rgba(255,0,110,0.12)', top: 'rgba(255,120,200,0.14)', bottom: 'rgba(90,0,160,0.20)' },
+  miami: { label: 'Miami Pink', sat: 1.45, con: 1.07, wash: 'rgba(255,0,180,0.12)', top: 'rgba(255,80,200,0.16)', bottom: 'rgba(0,180,220,0.24)' },
 };
 
 export const LAYOUTS = {
   poster: { label: 'Poster Grid', panels: 6 },
   hero: { label: 'Hero + Two', panels: 3 },
   strips: { label: 'Tilted Strips', panels: 3 },
+  quad: { label: 'Four Square', panels: 4 },
   full: { label: 'Full Bleed', panels: 1 },
 };
 
@@ -27,7 +29,11 @@ const PANEL_CELLS = {
   ],
   hero: [[0, 0, 0.64, 1], [0.64, 0, 0.36, 0.49], [0.64, 0.49, 0.36, 0.51]],
   strips: [
-    [0.01, 0.02, 0.34, 0.96, -4], [0.335, 0.02, 0.34, 0.96, 3], [0.66, 0.02, 0.34, 0.96, -3],
+    [0.01, 0.01, 0.34, 0.98, -4], [0.335, 0.01, 0.34, 0.98, 3], [0.66, 0.01, 0.34, 0.98, -3],
+  ],
+  quad: [
+    [0, 0, 0.5, 0.5], [0.5, 0, 0.5, 0.5],
+    [0, 0.5, 0.5, 0.5], [0.5, 0.5, 0.5, 0.5],
   ],
   full: [[0, 0, 1, 1]],
 };
@@ -212,7 +218,46 @@ function drawTitleBand(ctx, band) {
   drawPalm(ctx, x + w * 0.745, y + h * 1.0, h / 150, 'rgba(24, 8, 44, 0.95)');
 }
 
-/** The title lettering: kicker, Anton title, Pacifico subtitle. */
+/** Splits a title into two lines at the word boundary that best balances their
+ *  widths. Returns null when the title has no useful split point. */
+function splitTitle(words, maxW, fontFor) {
+  const parts = words.split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return null;
+  let best = null;
+  for (let cut = 1; cut < parts.length; cut++) {
+    const a = parts.slice(0, cut).join(' ');
+    const b = parts.slice(cut).join(' ');
+    const imbalance = Math.abs(fontFor(a).width - fontFor(b).width);
+    if (!best || imbalance < best.imbalance) best = { lines: [a, b], imbalance };
+  }
+  return best?.lines ?? null;
+}
+
+/** Draws one title line with a warm gradient fill, a dark outline and a soft
+ *  magenta glow, at the given baseline. */
+function drawTitleLine(ctx, text, x, baseline, size) {
+  ctx.font = `${size}px Anton, 'Arial Narrow', sans-serif`;
+  const grad = ctx.createLinearGradient(0, baseline - size, 0, baseline);
+  grad.addColorStop(0, '#ffffff');
+  grad.addColorStop(1, '#ffe9a8');
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#1a0b2e';
+  ctx.lineWidth = Math.max(2, size * 0.07);
+  ctx.shadowColor = 'rgba(255,46,136,0.55)';
+  ctx.shadowBlur = size * 0.10;
+  ctx.shadowOffsetY = size * 0.03;
+  ctx.strokeText(text, x, baseline);
+  ctx.fillStyle = grad;
+  ctx.fillText(text, x, baseline);
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+}
+
+/** The title lettering: kicker, Anton title, Pacifico subtitle. A title that
+ *  would shrink too small on one line wraps onto two balanced lines instead,
+ *  so long captions stay big and readable. The two-line layout moves the
+ *  kicker up and the subtitle down so nothing overlaps. */
 function drawTitleText(ctx, rect, title, subtitle) {
   const { x, y, w, h } = rect;
   const cx = x + w * 0.06;
@@ -220,34 +265,46 @@ function drawTitleText(ctx, rect, title, subtitle) {
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 
+  const words = (title.trim() || 'Neon Shore').toUpperCase();
+  const measure = (text, s) => {
+    ctx.font = `${s}px Anton, 'Arial Narrow', sans-serif`;
+    return ctx.measureText(text);
+  };
+  const oneLine = fitSize(words, maxW, h * 0.46, (s) => measure(words, s));
+  const lines = oneLine < h * 0.30
+    ? splitTitle(words, maxW, (t) => measure(t, h * 0.34))
+    : null;
+  const twoLineSize = lines ? Math.min(
+    fitSize(lines[0], maxW, h * 0.34, (s) => measure(lines[0], s)),
+    fitSize(lines[1], maxW, h * 0.34, (s) => measure(lines[1], s)),
+  ) : 0;
+  const twoLine = lines && twoLineSize >= h * 0.20;
+
+  // Kicker, tracked out with real letter-spacing (falls back to plain text
+  // where the canvas does not support it).
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
   const kickSize = Math.max(12, h * 0.085);
   ctx.font = `700 ${kickSize}px system-ui, sans-serif`;
-  ctx.fillText('N E O N   C O A S T   P R E S E N T S', cx, y + h * 0.17);
+  try { ctx.letterSpacing = `${Math.max(2, h * 0.02)}px`; } catch { /* older canvas: plain */ }
+  ctx.fillText('NEON COAST PRESENTS', cx, y + h * (twoLine ? 0.13 : 0.17));
+  try { ctx.letterSpacing = '0px'; } catch { /* ignore */ }
 
-  const words = (title.trim() || 'Neon Shore').toUpperCase();
-  const titleSize = fitSize(words, maxW, h * 0.46, (s) => {
-    ctx.font = `${s}px Anton, 'Arial Narrow', sans-serif`;
-    return ctx.measureText(words);
-  });
-  ctx.font = `${titleSize}px Anton, 'Arial Narrow', sans-serif`;
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = '#1a0b2e';
-  ctx.lineWidth = Math.max(2, titleSize * 0.07);
-  ctx.shadowColor = 'rgba(0,0,0,0.45)';
-  ctx.shadowBlur = titleSize * 0.12;
-  ctx.shadowOffsetY = titleSize * 0.04;
-  ctx.strokeText(words, cx, y + h * 0.62);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(words, cx, y + h * 0.62);
-  ctx.shadowColor = 'transparent';
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetY = 0;
+  if (twoLine) {
+    drawTitleLine(ctx, lines[0], cx, y + h * 0.46, twoLineSize);
+    drawTitleLine(ctx, lines[1], cx, y + h * 0.74, twoLineSize);
+    drawSubtitle(ctx, cx, y + h * 0.94, h * 0.13, subtitle);
+  } else {
+    drawTitleLine(ctx, words, cx, y + h * 0.62, oneLine);
+    drawSubtitle(ctx, cx, y + h * 0.86, h * 0.17, subtitle);
+  }
+}
 
+/** The Pacifico subtitle, tilted a touch, glowing neon yellow. */
+function drawSubtitle(ctx, x, baseline, size, subtitle) {
   const sub = (subtitle.trim() || 'a night in the city');
-  const subSize = Math.max(12, h * 0.17);
+  const subSize = Math.max(12, size);
   ctx.save();
-  ctx.translate(cx + 4, y + h * 0.86);
+  ctx.translate(x + 4, baseline);
   ctx.rotate(-0.02);
   ctx.font = `${subSize}px Pacifico, cursive`;
   ctx.shadowColor = '#ff71ce';

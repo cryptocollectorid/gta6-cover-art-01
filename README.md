@@ -11,16 +11,17 @@ City neon-sunset grade — exported as a PNG to share. Made for the
 
 ## What it does
 
-- **Multi-panel posters:** four layouts — Poster Grid (6 panels), Hero + Two,
-  Tilted Strips, and Full Bleed — with a sunset title band (striped sun,
-  skyline and palm silhouettes drawn in code).
+- **Multi-panel posters:** five layouts — Poster Grid (6 panels), Hero + Two,
+  Tilted Strips, Four Square (2 × 2), and Full Bleed — with a sunset title
+  band (striped sun, skyline and palm silhouettes drawn in code).
 - **Any photo:** load up to three of your own photos, place each one in any
-  panel, drag to pan and scroll to zoom, flip, or fill every panel with one
-  photo. Two free sample photos are included.
-- **Neon grades:** five colour grades — Vice Sunset, Neon Nights, Golden Hour,
-  Teal Noir, Candy Pop — plus film grain and a vignette.
+  panel, drag to pan and scroll to zoom, flip, reset a panel's crop, or fill
+  every panel with one photo. Two free sample photos are included.
+- **Neon grades:** six colour grades — Vice Sunset, Neon Nights, Golden Hour,
+  Teal Noir, Candy Pop, Miami Pink — plus film grain and a vignette.
 - **Bold lettering:** the title in Anton (SIL Open Font License, vendored under
-  `app/fonts/`), the subtitle in Pacifico neon script. All art is original —
+  `app/fonts/`), the subtitle in Pacifico neon script. A long title wraps onto
+  two balanced lines instead of shrinking away. All art is original —
   no Rockstar logo, artwork or fonts.
 - **Fast export:** one click exports a PNG in 1080 × 1080, 1080 × 1350 or
   1920 × 1080 — or all three at once.

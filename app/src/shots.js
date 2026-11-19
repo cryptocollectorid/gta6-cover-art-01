@@ -23,7 +23,8 @@ export async function runShot(shot, query, api) {
   document.querySelectorAll('#grades .chip').forEach((el) => el.classList.toggle('active', el.dataset.grade === grade));
 
   // Two sample photos, alternating across the panels. Aim each panel's crop at
-  // the upper part of its photo, where faces usually are.
+  // the upper part of its photo, where faces usually are. The quad layout gets
+  // two photos per side so its four panels still alternate.
   await setPhotoSlot(0, `samples/${photoA}.jpg`, `Sample: ${photoA}`);
   await setPhotoSlot(1, `samples/${photoB}.jpg`, `Sample: ${photoB}`);
   state.panels.forEach((p, i) => {
