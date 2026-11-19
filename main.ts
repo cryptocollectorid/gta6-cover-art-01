@@ -18,6 +18,17 @@ import { buildDossier } from './vendor/makefun-app.ts';
 const here = fileURLToPath(new URL('.', import.meta.url));
 const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 
+// The gate's caps (reference/gate.json), named once so the pre-flight below
+// and the dossier call can never drift apart: 3–4 screenshots, each at most
+// 256 KiB; app/ at most 993 files and 48 MiB; a path under app/ at most
+// 1000 bytes.
+const MIN_SHOTS = 3;
+const MAX_SHOTS = 4;
+const MAX_SHOT_BYTES = 256 * 1024;
+const APP_MAX_FILES = 993;
+const APP_MAX_BYTES = 48 * 1024 * 1024;
+const APP_PATH_MAX_BYTES = 1000;
+
 /** Walks a directory tree, returning [fileCount, totalBytes] of regular files. */
 function treeSize(root) {
   let files = 0;
@@ -41,15 +52,15 @@ function treeSize(root) {
 const shotsDir = join(here, 'screenshots');
 if (!existsSync(shotsDir)) throw new Error('screenshots/ is missing: take the 4 shots first');
 const shots = readdirSync(shotsDir).filter((n) => !n.startsWith('.'));
-if (shots.length < 3 || shots.length > 4) throw new Error(`screenshots/ holds ${shots.length} images, need 3 or 4`);
+if (shots.length < MIN_SHOTS || shots.length > MAX_SHOTS) throw new Error(`screenshots/ holds ${shots.length} images, need ${MIN_SHOTS} or ${MAX_SHOTS}`);
 for (const name of shots) {
   if (!/^[A-Za-z0-9._-]{1,128}$/.test(name) || name.startsWith('-')) throw new Error(`bad screenshot name: ${name}`);
   const size = statSync(join(shotsDir, name)).size;
-  if (size > 262144) throw new Error(`screenshot ${name} is ${size} bytes, over the 256 KiB cap`);
+  if (size > MAX_SHOT_BYTES) throw new Error(`screenshot ${name} is ${size} bytes, over the 256 KiB cap`);
 }
 const [appFiles, appBytes] = treeSize(join(here, 'app'));
-if (appFiles > 993) throw new Error(`app/ holds ${appFiles} files, over the 993 cap`);
-if (appBytes > 50331648) throw new Error(`app/ is ${appBytes} bytes, over the 48 MiB cap`);
+if (appFiles > APP_MAX_FILES) throw new Error(`app/ holds ${appFiles} files, over the ${APP_MAX_FILES} cap`);
+if (appBytes > APP_MAX_BYTES) throw new Error(`app/ is ${appBytes} bytes, over the 48 MiB cap`);
 
 mkdirSync(out, { recursive: true });
 cpSync(join(here, 'app'), join(out, 'app'), { recursive: true });
@@ -64,10 +75,10 @@ writeFileSync(
   join(out, 'dossier.json'),
   buildDossier(out, {
     text_max_bytes: 163840,
-    screenshots: { max: 4, max_bytes: 262144 },
-    app_max_files: 993,
-    app_max_bytes: 50331648,
-    app_path_max_bytes: 1000,
+    screenshots: { max: MAX_SHOTS, max_bytes: MAX_SHOT_BYTES },
+    app_max_files: APP_MAX_FILES,
+    app_max_bytes: APP_MAX_BYTES,
+    app_path_max_bytes: APP_PATH_MAX_BYTES,
   }),
 );
 

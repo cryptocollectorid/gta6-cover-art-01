@@ -3,7 +3,21 @@
 // names. `layout`, `grade`, `caption`, `subtitle`, `photo` and `photo2` pick the
 // scene; `size` (WxH) sets the cover canvas. window.__shotReady is set once
 // the scene is painted, so headless Chromium can screenshot it.
+//
+// The four shots in shots.json, in order:
+//   1-cover.jpg  cover, 1920x1080 wide, Poster Grid + Vice Sunset, "Neon Shore"
+//   2-editor.jpg editor, Poster Grid + Vice Sunset, "Neon Shore" (the app at work)
+//   3-cover.jpg  cover, 1080x1350 portrait, Center Stage + Midnight Indigo,
+//                "Ocean Drive After Dark" (two-line title)
+//   4-cover.jpg  cover, 1080x1080 square, Four Square + Golden Hour, "Sunset Heist"
 export async function runShot(shot, query, api) {
+  // An unknown ?shot= value falls back to the editor scene, so the app always
+  // shows something and never a blank page. No ?shot= at all (a plain load)
+  // is the editor too, and stays silent.
+  const scene = shot === 'cover' ? 'cover' : 'editor';
+  if (shot !== null && shot !== 'cover' && shot !== 'editor') {
+    console.warn(`unknown ?shot=${shot}, showing the editor instead`);
+  }
   const { state, setPhotoSlot, redraw, canvas, SIZES } = api;
   const layout = query.get('layout') ?? 'poster';
   const grade = query.get('grade') ?? 'vice';
@@ -37,7 +51,7 @@ export async function runShot(shot, query, api) {
     p.oy = img && img.naturalHeight > img.naturalWidth ? 0.88 : 0.80;
   });
 
-  if (shot === 'cover') {
+  if (scene === 'cover') {
     // The cover alone, full frame, at the requested export size.
     const size = SIZES[sizeKey] ?? SIZES['1080x1080'];
     state.size = sizeKey;
