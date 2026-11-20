@@ -1,3 +1,4 @@
+This license covers the fonts in this directory: Anton-Regular.ttf and Pacifico-Regular.ttf.
 Copyright 2020 The Anton Project Authors (https://github.com/googlefonts/AntonFont.git)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
