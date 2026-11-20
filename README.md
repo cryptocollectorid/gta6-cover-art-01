@@ -20,8 +20,8 @@ City neon-sunset grade — exported as a PNG to share. Made for the
   every panel with one photo. Two free sample photos are included.
 - **Neon grades:** seven colour grades — Vice Sunset, Neon Nights, Golden Hour,
   Teal Noir, Candy Pop, Miami Pink, Midnight Indigo — plus film grain and a
-  vignette. Hold **Hold to compare** to see the photos ungraded, and tap
-  **Surprise me** for a genre caption idea when the words won't come.
+  vignette. Hold **Hold to compare** (or hold **H** on the keyboard) to see the
+  photos ungraded, and tap **Surprise me** for a genre caption idea when the words won't come.
 - **Bold lettering:** the title in Anton (SIL Open Font License, vendored under
   `app/fonts/`), the subtitle in Pacifico neon script. A long title wraps onto
   two balanced lines instead of shrinking away. All art is original —
@@ -37,6 +37,9 @@ node serve.ts        # serves app/ at http://localhost:8080
 
 Open the page, load a photo, type a caption, export. Everything runs from
 static files under `app/` — no network requests, no uploads, no build step.
+The preview canvas is keyboard-focusable (visible focus ring), and a bad
+`?shot=` layout or grade name falls back to Poster Grid / Vice Sunset instead
+of a blank scene.
 
 ## Hand in
 

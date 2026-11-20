@@ -18,6 +18,7 @@ const PRESETS = [
   { title: 'Sunset Heist', subtitle: 'golden hour, every hour' },
   { title: 'Midnight at the Pier', subtitle: 'salt air and neon lights' },
   { title: 'Ocean Drive', subtitle: 'after dark' },
+  { title: 'Neon Coast', subtitle: 'where the sun never sets' },
   { title: 'Palm Tree Hustle', subtitle: 'chasing the last light' },
 ];
 
@@ -109,7 +110,9 @@ for (let slot = 0; slot < 3; slot++) {
     try { await setPhotoSlot(slot, file, file.name); } catch { say('That file could not be read as a photo.'); }
   });
   document.getElementById(`sample-${slot}`).addEventListener('click', async () => {
-    const sample = slot === 2 ? 'pier' : slot === 1 ? 'boulevard' : 'boulevard';
+    // Slots alternate samples so neighbouring slots never start identical:
+    // slot 1 gets the pier, slots 0 and 2 the boulevard.
+    const sample = slot === 1 ? 'pier' : 'boulevard';
     try { await setPhotoSlot(slot, `samples/${sample}.jpg`, `Sample: ${sample}`); } catch { say('Sample photo failed to load.'); }
   });
   document.getElementById(`slot-${slot}`).addEventListener('click', (e) => {
@@ -225,6 +228,14 @@ function setCompare(on) {
 compareBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); setCompare(true); });
 compareBtn.addEventListener('pointerup', () => setCompare(false));
 compareBtn.addEventListener('pointerleave', () => { if (state.compare) setCompare(false); });
+// Keyboard twin of hold-to-compare: hold H (outside the text fields) to see
+// the photos ungraded, release it to bring the grade back.
+document.addEventListener('keydown', (e) => {
+  if ((e.key === 'h' || e.key === 'H') && !e.repeat && !e.target.closest('input, textarea')) setCompare(true);
+});
+document.addEventListener('keyup', (e) => {
+  if ((e.key === 'h' || e.key === 'H') && state.compare) setCompare(false);
+});
 function zoomSelected(factor) {
   const p = state.panels[selectedPanel];
   p.zoom = Math.min(4, Math.max(1, p.zoom * factor));

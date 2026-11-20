@@ -76,17 +76,20 @@ function fitSize(text, maxWidth, start, fontFor) {
   return size;
 }
 
+const GRAIN_TILE = 140;
+const GRAIN_ALPHA = 26;
+const GRAIN_OVERLAY_ALPHA = 0.45;
 let noisePattern = null;
 /** A reusable film-grain tile, built once per context. */
 function grainPattern(ctx) {
   if (noisePattern) return noisePattern;
   const tile = document.createElement('canvas');
-  tile.width = 140; tile.height = 140;
+  tile.width = GRAIN_TILE; tile.height = GRAIN_TILE;
   const tctx = tile.getContext('2d');
-  const img = tctx.createImageData(140, 140);
+  const img = tctx.createImageData(GRAIN_TILE, GRAIN_TILE);
   for (let i = 0; i < img.data.length; i += 4) {
     const v = 110 + Math.floor(Math.random() * 90);
-    img.data[i] = v; img.data[i + 1] = v; img.data[i + 2] = v; img.data[i + 3] = 26;
+    img.data[i] = v; img.data[i + 1] = v; img.data[i + 2] = v; img.data[i + 3] = GRAIN_ALPHA;
   }
   tctx.putImageData(img, 0, 0);
   noisePattern = ctx.createPattern(tile, 'repeat');
@@ -354,7 +357,7 @@ export function drawCover(ctx, W, H, state) {
   const grain = grainPattern(ctx);
   if (grain) {
     ctx.save();
-    ctx.globalAlpha = 0.5;
+    ctx.globalAlpha = GRAIN_OVERLAY_ALPHA;
     ctx.globalCompositeOperation = 'overlay';
     ctx.fillStyle = grain;
     ctx.fillRect(0, 0, W, H);

@@ -28,6 +28,8 @@ const MAX_SHOT_BYTES = 256 * 1024;
 const APP_MAX_FILES = 993;
 const APP_MAX_BYTES = 48 * 1024 * 1024;
 const APP_PATH_MAX_BYTES = 1000;
+// Only still images may be handed in as screenshots.
+const SHOT_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 
 /** Walks a directory tree, returning [fileCount, totalBytes] of regular files. */
 function treeSize(root) {
@@ -55,9 +57,11 @@ const shots = readdirSync(shotsDir).filter((n) => !n.startsWith('.'));
 if (shots.length < MIN_SHOTS || shots.length > MAX_SHOTS) throw new Error(`screenshots/ holds ${shots.length} images, need ${MIN_SHOTS} or ${MAX_SHOTS}`);
 for (const name of shots) {
   if (!/^[A-Za-z0-9._-]{1,128}$/.test(name) || name.startsWith('-')) throw new Error(`bad screenshot name: ${name}`);
+  if (!SHOT_EXTENSIONS.has(name.slice(name.lastIndexOf('.')).toLowerCase())) throw new Error(`screenshot ${name} is not a still image (.jpg/.png/.webp)`);
   const size = statSync(join(shotsDir, name)).size;
   if (size > MAX_SHOT_BYTES) throw new Error(`screenshot ${name} is ${size} bytes, over the 256 KiB cap`);
 }
+const shotBytes = shots.reduce((sum, name) => sum + statSync(join(shotsDir, name)).size, 0);
 const [appFiles, appBytes] = treeSize(join(here, 'app'));
 if (appFiles > APP_MAX_FILES) throw new Error(`app/ holds ${appFiles} files, over the ${APP_MAX_FILES} cap`);
 if (appBytes > APP_MAX_BYTES) throw new Error(`app/ is ${appBytes} bytes, over the 48 MiB cap`);
@@ -82,4 +86,4 @@ writeFileSync(
   }),
 );
 
-console.log(`dossier written: app/ ${appFiles} files, ${appBytes} bytes; screenshots/ ${shots.length} files`);
+console.log(`dossier written: app/ ${appFiles} files, ${appBytes} bytes; screenshots/ ${shots.length} files, ${shotBytes} bytes`);
